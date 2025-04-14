@@ -4,6 +4,8 @@ Currently supporting only Google's Gemini model due to its free, though rate-lim
 
 The main function, `askai(question, prompts)`, retrieves results from a large language model. Two macros are designed to extract Julia code from these results. `@ai` displays the code as markdown, while `@AI` executes the code within the "playground" scope and displays the output(or any errors.)
 
+## Overview
 ![AskAI](./overview.png)
 
-
+## Screenshot
+![screenshot](./docs/src/result1.png)
