@@ -34,7 +34,7 @@ $(@__MODULE__).setapi("1234567890abcdef1234567890abcdef")
     end
 
     isinteractive() || return
-    @async initrepl(s -> Main.eval(Meta.parse("AskAI.@ai \"$s\""));
+    initrepl(s -> Main.eval(Meta.parse("AskAI.@ai \"$s\""));
              prompt_text="ask ai> ",
              prompt_color=104,
              start_key='}',
