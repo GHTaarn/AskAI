@@ -6,7 +6,7 @@ Base.@kwdef mutable struct AIBrain
     stream::Bool=false # if the model returns the stream response
     timeout::Int = 10 # set the timeout for the http request
     model::AbstractString = "gemini-2.0-flash" # the model
-    DRG::AbstractString = "" # support in the futhur
+    DRG::AbstractString = "" # support in the future
 end
 
 (m::AIBrain)( question::AbstractString ) = begin

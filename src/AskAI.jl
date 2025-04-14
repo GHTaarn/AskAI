@@ -13,7 +13,7 @@ function __init__()
     # check for the required AI_API_KEY  #
     ######################################
     if haskey(ENV, "AI_API_KEY")
-        println("AI_API_KEY is set to $(ENV["AI_API_KEY"])")
+        # println("AI_API_KEY is set to $(ENV["AI_API_KEY"])")
         setapi(ENV["AI_API_KEY"])
     else
         msg = """
@@ -34,7 +34,7 @@ $(@__MODULE__).setapi("1234567890abcdef1234567890abcdef")
     end
 
     isinteractive() || return
-    initrepl(s -> Main.eval(Meta.parse("AskAI.@ai \"$s\""));
+    @async initrepl(s -> Main.eval(Meta.parse("AskAI.@ai \"$s\""));
              prompt_text="ask ai> ",
              prompt_color=104,
              start_key='}',
