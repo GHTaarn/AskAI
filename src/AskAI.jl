@@ -1,5 +1,6 @@
 module AskAI
 using HTTP, JSON3, Markdown
+using ReplMaker: initrepl
 
 include("brain.jl")
 
@@ -31,6 +32,14 @@ $(@__MODULE__).setapi("1234567890abcdef1234567890abcdef")
         setapi("")
         display(Markdown.parse(msg))
     end
+
+    isinteractive() || return
+    initrepl(s -> Main.eval(Meta.parse("AskAI.@ai \"$s\""));
+             prompt_text="ask ai> ",
+             prompt_color=104,
+             start_key='}',
+             mode_name=:askai,
+            )
 
 end
 
@@ -128,7 +137,6 @@ to add the module to the Main scope, which will be used by @AI to call julia cod
         # res
     end
 end
-
 
 export @ai, @AI, exe, reset
 
