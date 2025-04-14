@@ -21,7 +21,7 @@ ENV["AI_API_KEY"]="1234567890abcdef1234567890abcdef"
 or set it through function `setapi()`
 ```julia
 setapi("1234567890abcdef1234567890abcdef")
-AskAI.reset()
+
 ```
 """
     AI_API_KEY = ""
@@ -32,7 +32,6 @@ end
 set the API_KEY
 ```julia
 setapi("1234567890abcdef1234567890abcdef")
-AskAI.reset()
 ```
 """
 setapi(api::AbstractString) = global AI_API_KEY = api
