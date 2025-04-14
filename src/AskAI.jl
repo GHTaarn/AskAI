@@ -3,16 +3,20 @@ using HTTP, JSON3, Markdown
 
 include("brain.jl")
 
+AI_API_KEY = "API key not set"
+prompt_to_get_code = "if the answer contains code, only output the raw code in julia"
 
-######################################
-# check for the required AI_API_KEY  #
-######################################
-if haskey(ENV, "AI_API_KEY")
-    println("AI_API_KEY is set to $(ENV["AI_API_KEY"])")
-    AI_API_KEY = ENV["AI_API_KEY"]
-else
-    msg = """
-API_KEY is needed. please set it as in environment variable:
+function __init__()
+    global AI_API_KEY
+    ######################################
+    # check for the required AI_API_KEY  #
+    ######################################
+    if haskey(ENV, "AI_API_KEY")
+        println("AI_API_KEY is set to $(ENV["AI_API_KEY"])")
+        setapi(ENV["AI_API_KEY"])
+    else
+        msg = """
+API_KEY is needed. please set it as an environment variable:
 
 ```julia
 ENV["AI_API_KEY"]="1234567890abcdef1234567890abcdef"
@@ -20,12 +24,14 @@ ENV["AI_API_KEY"]="1234567890abcdef1234567890abcdef"
 
 or set it through function `setapi()`
 ```julia
-setapi("1234567890abcdef1234567890abcdef")
+$(@__MODULE__).setapi("1234567890abcdef1234567890abcdef")
 
 ```
 """
-    AI_API_KEY = ""
-    display(Markdown.parse(msg))
+        setapi("")
+        display(Markdown.parse(msg))
+    end
+
 end
 
 """
@@ -34,11 +40,10 @@ set the API_KEY
 setapi("1234567890abcdef1234567890abcdef")
 ```
 """
-setapi(api::AbstractString) = global AI_API_KEY = api
-
-
-prompt_to_get_code = "if the answer contains code, only output the raw code in julia"
-Brain = AIBrain(api=AI_API_KEY, prompt = prompt_to_get_code )
+function setapi(api::AbstractString)
+    global AI_API_KEY = api
+    global Brain = AIBrain(api=AI_API_KEY, prompt = prompt_to_get_code )
+end
 
 
 """
