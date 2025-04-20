@@ -2,34 +2,43 @@ module AskAI
 using HTTP, JSON3, Markdown
 using ReplMaker: initrepl
 
+include("models.jl")
 include("brain.jl")
 
-AI_API_KEY = "API key not set"
 prompt_to_get_code = "if the answer contains code, only output the raw code in julia"
 
+AskAI_config="provider|model|apiOrURL"
+
+# AI_API_KEY = "API key not set"
+
 function __init__()
-    global AI_API_KEY
+    global AI_Provider,AI_Model,AI_URL_Or_API
+
     ######################################
     # check for the required AI_API_KEY  #
     ######################################
-    if haskey(ENV, "AI_API_KEY")
-        # println("AI_API_KEY is set to $(ENV["AI_API_KEY"])")
-        setapi(ENV["AI_API_KEY"])
+    if haskey(ENV, "AskAI_config")
+        setapi(ENV["AskAI_config"])
     else
         msg = """
-API_KEY is needed. please set it as an environment variable:
-
+AskAI_config is needed. please set it as an environment variable, follow the rule: "provider|model|api" :
 ```julia
-ENV["AI_API_KEY"]="1234567890abcdef1234567890abcdef"
+# for Gemini
+ENV["AskAI_config"]="Gemini|gemini-2.0-flash|1234567890abcdef1234567890abcdef"
+
+# for ollama
+ENV["AskAI_config"]="ollama|qwen2.5:72b|http://localhost:11434"
+
 ```
 
 or set it through function `setapi()`
 ```julia
-$(@__MODULE__).setapi("1234567890abcdef1234567890abcdef")
-
+$(@__MODULE__).setapi("Gemini|gemini-2.0-flash|1234567890abcdef1234567890abcdef")
+# or
+$(@__MODULE__).setapi("ollama|qwen2.5:72b|http://localhost:11434")
 ```
 """
-        setapi("")
+        setapi("Gemini|noModel|noAPI|")
         display(Markdown.parse(msg))
     end
 
@@ -43,15 +52,22 @@ $(@__MODULE__).setapi("1234567890abcdef1234567890abcdef")
 
 end
 
+
 """
-set the API_KEY
 ```julia
-setapi("1234567890abcdef1234567890abcdef")
+setapi("ollama|modelName|URL")
+setapi("gemini|modelName|api")
 ```
 """
-function setapi(api::AbstractString)
-    global AI_API_KEY = api
-    global Brain = AIBrain(api=AI_API_KEY, prompt = prompt_to_get_code )
+function setapi( api::String )
+    provider, model, apiOrURL = split(api,"|")
+    provider = lowercase(provider)
+    @assert lowercase(provider) in ["gemini", "ollama"]
+    if provider == "gemini"
+        global Brain = AIBrain( model = Gemini(model,apiOrURL), prompt = prompt_to_get_code  )
+    else
+        global Brain = AIBrain( model = ollama(model,apiOrURL), prompt = prompt_to_get_code  )
+    end
 end
 
 
@@ -62,7 +78,8 @@ AskAI.reset()
 ```
 """
 function reset()
-   global Brain = AIBrain(api=AI_API_KEY, prompt = prompt_to_get_code )
+   global Brain = AIBrain(model = Brain.model,prompt = Brain.prompt)
+
 end
 
 
@@ -138,6 +155,5 @@ to add the module to the Main scope, which will be used by @AI to call julia cod
     end
 end
 
-export @ai, @AI, exe, reset
-
+export setAPI, @ai, @AI, avaliableModels, changeModels!
 end

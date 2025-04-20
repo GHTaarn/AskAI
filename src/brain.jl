@@ -2,59 +2,72 @@ Base.@kwdef mutable struct AIBrain
     memory::AbstractString  = "" # summary of the past query
     history::Dict = Dict("ask" => [], "ans" => []) # conversation history
     prompt::AbstractString  = ""
-    api::AbstractString
-    stream::Bool=false # if the model returns the stream response
+    stream::Bool=true # if the model returns the stream response
     timeout::Int = 10 # set the timeout for the http request
-    model::AbstractString = "gemini-2.0-flash" # the model
-    DRG::AbstractString = "" # support in the future
+    model::modelProvider # = "gemini-2.0-flash" # the model
+    RAG::AbstractString = "" # to store RAG result
 end
+
+
+"""
+changeModels!(AskAI.Brain, "qwen2.5:72b")
+"""
+function changeModels!(m::AIBrain, model::String)
+    m.model.model = model
+end
+
 
 (m::AIBrain)( question::AbstractString ) = begin
     headers = Dict("Content-Type" => "application/json")
-    body = JSON3.write(Dict("contents" => Dict("parts" => [Dict("text" => m.DRG * "\n" * m.memory * "\n" *  m.prompt * "\n" * question)])))
-    url = "https://generativelanguage.googleapis.com/v1beta/models/$(m.model):generateContent?key=$(m.api)"
+    url = getRESTURL(m.model)
+    body = question2JSONString(m.model,question)
     if !m.stream
-        resp = HTTP.post(url,body=body, headers=headers, timeout=m.timeout)
-        if resp.status == 200
-            try
-                text = JSON3.read(resp.body)[:candidates][1][:content][:parts][1]["text"]
+        try
+            resp = HTTP.post(url,body=body, headers=headers, timeout=m.timeout)
+            if resp.status == 200
+                # text = JSON3.read(resp.body)[:candidates][1][:content][:parts][1]["text"]
+                text = getAnswer(m.model, resp)
                 m.memory *= "ask: $(question) \n ans: $(text) \n"
                 push!(m.history["ask"], question)
                 push!(m.history["ans"], text)
                 @async checkMemory!(m)
                 return text |> Markdown.parse # show in the terminal
-            catch error
-                return "respond: f(JSON3.read(resp.body)[:candidates][1][:finishReason]), you may toggle the request limitation"
+            else
+                return "respond code: $(resp.status)🔗🚫"
             end
-        else
-            return "respond code: $(resp.status)🔗🚫"
+        catch error
+            @error "Unexpected response,Please check the model"
+            Brain
         end
     else
-
         ##########################
         # for streaming response #
         ##########################
 
         m.memory *= "ask: $(question) \n"
         push!(m.history["ask"], question)
-        url = "https://generativelanguage.googleapis.com/v1beta/models/$(m.model):streamGenerateContent?alt=sse&key=$(m.api)"
+
         channel = Channel{String}(3000)
         channel2 = Channel{String}(3000)
-        @async HTTP.open(:post, url, headers=headers, timeout=m.timeout) do io
+
+        @async HTTP.open(:POST, url, headers=headers, timeout=m.timeout) do io
             write(io, body)
             HTTP.closewrite(io)
-            HTTP.startread(io)
-            isdone = false
-            while !eof(io)
+            r = HTTP.startread(io)
+            EOF_signal = 0
+            last_str="EOF"
+            while (EOF_signal > 10) || !eof(io)
                 chunk = String(readavailable(io))
                 lines = String.(filter(!isempty, split(chunk, "\n")))
                 for line in lines
-                    if startswith(line, "data: ")
-                        data = JSON3.read(replace(line, r"^data: " => ""))
-                        currentText = data[:candidates][1][:content][:parts][1]["text"]
-                        push!(channel,currentText)
-                        push!(channel2,currentText)
+                    currentText = getAnswer(m.model,line)
+                    # If the model falls into a repetitive loop, I should stop it
+                    if last_str === currentText
+                         EOF_signal += 1
                     end
+                    last_str = currentText
+                    push!(channel,currentText)
+                    push!(channel2,currentText)
                 end
             end
             HTTP.closeread(io)
@@ -64,10 +77,12 @@ end
         showStreamStringFromChannel(channel) # show in the terminal
         streamToMemory(m,channel2)
         @async checkMemory!(m)
-    end;
+        # final reflash and print output
+        print("\033c")
+        replace(Brain.history["ans"][end], r"^ans: " => "# Final Output \n\n" ) |> MD
+
+      end;
 end
-
-
 
 """
 for stream mode, displays a streaming response from the channel, updating the display in terminal with each chunk of text received.
@@ -119,13 +134,13 @@ end;
 MD = Markdown.parse
 Base.show(io::IO, ::MIME"text/plain", m::AIBrain) = begin
     MD("""
-$(m.model * " with API " * m.api)
+$(m.model.model)
 
 \n for more \n
 - memory: $(length(m.memory)) words
 - history:  $(length(m.history["ans"])) conversation
 - prompt: $(m.prompt)
-- DRG: not supported yet
+
 """) |> show
 end
 
