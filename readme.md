@@ -1,6 +1,6 @@
 
 <a href="https://aibiolab.github.io/AskAI" target="_blank" rel="noopener noreferrer">
-    <img alt="Static Badge" src="https://img.shields.io/badge/docs-0.1.0-green">
+    <img alt="Static Badge" src="https://img.shields.io/badge/docs-0.1.2-green">
 </a>
 
 AskAI.jl, as its name suggests, is a straightforward tool for querying Large Language Models. 
