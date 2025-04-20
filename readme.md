@@ -12,4 +12,4 @@ The main function, `askai(question, prompts)`, retrieves results from a large la
 ![AskAI](./overview.png)
 
 ## Screenshot
-![screenshot](./docs/src/result1.png)
+![screenshot](./docs/src/result3.png)
