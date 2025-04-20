@@ -2,9 +2,9 @@
 # Overview
 
 AskAI.jl, as its name suggests, is a straightforward tool for querying Large Language Models. 
-Currently supporting ollama and Google's Gemini model API. it's designed to be simple and direct: send prompts and questions to Gemini, and optionally execute the included code within a sandboxed "playground" to avoid affecting the main scope.
+Currently supporting ollama and Google's Gemini model API. it's designed to be simple and direct: send prompts and questions to AI provider, and optionally execute the included code within a sandboxed "playground" to avoid affecting the main scope.
 
-The main macro, `@ai`, retrieves results from a large language model (current the Gemini, more model supported soon), while `@AI` executes the code within the "playground" scope and displays the output(or any errors.)
+The main macro, `@ai`, retrieves results from a large language model, while `@AI` executes the code within the "playground" scope and displays the output(or any errors.)
 
 a REPL mode was also support. Press `}` to enter and backspace to exit
 
@@ -33,7 +33,7 @@ it starts as my persional AI tool in julia REP and only support the Gemini model
 (@v1.10) pkg> add https://github.com/AIBioLab/AskAI 
 julia> using AskAI
 # now you can configure it with your AI model provider; eg ollama
-julia> AskAI.setapi("ollama|glm4:latest|http://128.218.92.80:11434")
+julia> AskAI.setapi("ollama|glm4:latest|http://localhost:11434")
 # or Gemini
 julia> AskAI.setapi("Gemini|modelName|your API key")
 ```
